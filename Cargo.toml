@@ -1,0 +1,15 @@
+[package]
+name = "hemoglobin"
+version = "0.1.0"
+authors = ["Bernardo Meurer <meurerbernardo@gmail.com>"]
+
+[features]
+# If this feature is enabled, it will add <cargo root dir>/resources/ to
+# the resource search path.
+#cargo-resource-root = []
+
+[dependencies]
+num-traits = "0.1.40"
+ndarray = "0.10.12"
+rand = "0.3.17"
+#ggez = { version = "0.3.3", features=["cargo-resource-root"] }
