@@ -1,6 +1,5 @@
 // Leaving this here otherwise linters go insane since most of these are unused.
 #![allow(dead_code)]
-#![feature(type_ascription)]
 
 extern crate ndarray;
 extern crate num_traits;
