@@ -1,6 +1,7 @@
 // Here because linters go insane since most code is still unused.
 #![allow(dead_code)]
 
+#[macro_use]
 extern crate ndarray;
 extern crate num_traits;
 extern crate rand;
@@ -131,16 +132,16 @@ impl World {
 
 impl fmt::Display for World {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let top_frame = "╔".to_owned() + &"═".repeat(self.width - 1) + "╗";
+        let top_frame = "╔".to_owned() + &"═".repeat(self.width) + "╗";
         let mut middle_frame = "\n".to_owned();
-        for row in 1..self.height {
+        for row in 0..self.height {
             middle_frame += "║";
-            for col in 1..self.width {
+            for col in 0..self.width {
                 middle_frame += &self.grid[[col, row]].to_string();
             }
             middle_frame += "║\n";
         }
-        let bottom_frame = "╚".to_owned() + &"═".repeat(self.width - 1) + "╝";
+        let bottom_frame = "╚".to_owned() + &"═".repeat(self.width) + "╝";
 
         write!(f, "{}{}{}", top_frame, middle_frame, bottom_frame)
     }
@@ -151,4 +152,6 @@ fn main() {
     w.gen();
     println!("{}", w);
 
+    let slice = w.grid.slice(s![0..4, 0..4]);
+    println!("w.grid.slice(s![0..4, 0..4])\n{}", slice);
 }
