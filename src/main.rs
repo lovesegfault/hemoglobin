@@ -84,8 +84,8 @@ impl World {
         }
     }
     fn gen(&mut self) {
-        for col in 1..self.width {
-            for row in 1..self.height {
+        for col in 0..self.width {
+            for row in 0..self.height {
                 if rand::thread_rng().gen_weighted_bool(10) {
                     self.grid[[col, row]] = Cell::Alive;
                 }
@@ -102,8 +102,8 @@ impl World {
 
     fn step(&mut self) {
         let mut new_grid: ndarray::Array2<Cell> = ndarray::Array2::zeros((self.width, self.height));
-        for col in 1..self.width {
-            for row in 1..self.height {
+        for col in 0..self.width {
+            for row in 0..self.height {
             	let neigh_living = self.neighbours((col, row), Cell::Alive);
                 // Rule 1. Any live cell with fewer than two live neighbours
                 // dies, as if caused by underpopulation.
