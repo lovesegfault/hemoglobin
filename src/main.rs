@@ -152,6 +152,8 @@ fn main() {
     w.gen();
     println!("{}", w);
 
-    let slice = w.grid.slice(s![0..4, 0..4]);
-    println!("w.grid.slice(s![0..4, 0..4])\n{}", slice);
+    let mut new_w = World::new(6, 6);
+    new_w.grid = w.grid.slice(s![0..6, 0..6]).to_owned();
+
+    println!("w.grid.slice(s![0..6, 0..6])\n{}", new_w);
 }
