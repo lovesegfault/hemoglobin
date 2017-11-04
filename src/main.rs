@@ -12,11 +12,13 @@ use rand::Rng;
 use rustty::{Terminal, Event, HasSize, CellAccessor};
 use rustty::ui::{Widget, Alignable, HorizontalAlign, VerticalAlign};
 
+type Board = HashSet<(usize, usize)>;
+
 #[derive(Clone)]
 struct World {
     height: usize,
     width: usize,
-    grid: HashSet<(usize, usize)>,
+    grid: Board,
 }
 
 impl World {
@@ -40,8 +42,8 @@ impl World {
 
     // This is an obviously dumb way to do this
     // TODO: Find a better way
-    fn neighbors(&self, cell: &(usize, usize)) -> HashSet<(usize, usize)>{
-    	let mut neighbors: HashSet<(usize, usize)> = HashSet::with_capacity(8);
+    fn neighbors(&self, cell: &(usize, usize)) -> Board{
+    	let mut neighbors: Board = HashSet::with_capacity(8);
     	let (x, y) = (cell.0, cell.1);
 
     	let top = y.checked_sub(1) != None;
@@ -73,13 +75,13 @@ impl World {
     	if left && top {
     		neighbors.insert((x - 1, y - 1));
     	}
-    	return neighbors;
+    	neighbors
     }
 
     // TODO: Fix dumbness
     fn neighbor_count(&self, cell: &(usize, usize)) ->
-    (HashSet<(usize, usize)>, HashSet<(usize, usize)>) {
-    	let mut neighbors: (HashSet<(usize, usize)>, HashSet<(usize, usize)>) =
+    (Board, Board) {
+    	let mut neighbors: (Board, Board) =
     		(HashSet::with_capacity(8), HashSet::with_capacity(8));
     	for neighbor in self.neighbors(cell) {
     		if self.grid.contains(&neighbor) {
@@ -88,20 +90,19 @@ impl World {
     			neighbors.1.insert(neighbor);
     		}
     	}
-    	return neighbors;
+    	neighbors
     }
     // TODO: undumb
     fn step(&mut self) {
-    	let mut new_state: HashSet<(usize, usize)> =
+    	let mut new_state: Board =
     		HashSet::with_capacity(self.width * self.height);
 
-    	for cell in self.grid.iter() {
+    	for cell in &self.grid {
     		let (living, dead) = self.neighbor_count(cell);
-    		if living.len() < 2 {}
+    		if living.len() < 2 || living.len() > 3 {}
     		else if living.len() == 2 || living.len() == 3 {
     			new_state.insert(*cell);
     		}
-    		else if living.len() > 3 {}
 
     		for neighbor in dead {
     			if self.neighbor_count(cell).0.len() == 3 {
