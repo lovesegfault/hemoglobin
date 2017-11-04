@@ -1,118 +1,162 @@
-// Leaving this here otherwise linters go insane since most of these are unused.
+// Here because linters go insane since most code is still unused.
 #![allow(dead_code)]
 
-extern crate ndarray;
-extern crate num_traits;
 extern crate rand;
+extern crate rustty;
 
-use std::fmt;
-use num_traits::Zero;
+use std::collections::HashSet;
+use std::time::Duration;
+
 use rand::Rng;
 
-// Cell is really just a boolean with better naming.
-#[derive(Copy, Clone, PartialEq, Eq)]
-enum Cell {
-    Alive,
-    Dead,
-}
+use rustty::{Terminal, Event, HasSize, CellAccessor};
+use rustty::ui::{Widget, Alignable, HorizontalAlign, VerticalAlign};
 
-
-impl std::ops::Add<Cell> for Cell {
-    type Output = Cell;
-    fn add(self, rhs: Cell) -> Cell {
-        if self.is_zero() && rhs.is_zero() {
-            Cell::Dead
-        } else {
-            Cell::Alive
-        }
-    }
-}
-
-impl num_traits::Zero for Cell {
-    fn zero() -> Self {
-        Cell::Dead
-    }
-    fn is_zero(&self) -> bool {
-        self == &Cell::Dead
-    }
-}
-
-
-impl fmt::Display for Cell {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Cell::Alive => write!(f, "{}", "█"),
-            Cell::Dead => write!(f, "{}", "░"),
-        }
-    }
-}
-
-impl Cell {
-    fn new() -> Cell {
-        Cell::Dead
-    }
-    // Sets a cell to Alive
-    fn birth(&mut self) {
-        *self = Cell::Alive;
-    }
-    // Sets a cell to Dead
-    fn kill(&mut self) {
-        *self = Cell::Dead;
-    }
-    // Returns the Cell of a cell
-    fn probe(self) -> Cell {
-        self
-    }
-}
-
+#[derive(Clone)]
 struct World {
     height: usize,
     width: usize,
-    grid: ndarray::Array2<Cell>,
+    grid: HashSet<(usize, usize)>,
 }
 
 impl World {
-    fn new(height: usize, width: usize) -> World {
+    fn new((width, height): (usize, usize)) -> World {
         World {
             height: height,
             width: width,
-            grid: ndarray::Array2::zeros((width, height)),
+            grid: HashSet::with_capacity(height * width),
         }
     }
     fn gen(&mut self) {
-    	for col in 1..self.width {
-    		for row in 1..self.height {
-    			if rand::thread_rng().gen_weighted_bool(10) {
-    				self.grid[[col, row]] = Cell::Alive;
+    	self.grid.clear();
+        for x in 1..self.width {
+            for y in 1..self.height {
+                if rand::thread_rng().gen_weighted_bool(10) {
+                    self.grid.insert((x, y));
+                }
+            }
+        }
+    }
+
+    // This is an obviously dumb way to do this
+    // TODO: Find a better way
+    fn neighbors(&self, cell: &(usize, usize)) -> HashSet<(usize, usize)>{
+    	let mut neighbors: HashSet<(usize, usize)> = HashSet::with_capacity(8);
+    	let (x, y) = (cell.0, cell.1);
+
+    	let top = y.checked_sub(1) != None;
+    	let bot = y.checked_add(1) <= Some(self.height);
+    	let right = x.checked_add(1) <= Some(self.width);
+    	let left = x.checked_sub(1) != None;
+
+    	if right {
+    		neighbors.insert((x + 1, y));
+    	}
+    	if right && bot {
+    		neighbors.insert((x + 1, y + 1));
+    	}
+    	if right && top {
+    		neighbors.insert((x + 1, y - 1));
+    	}
+    	if bot {
+    		neighbors.insert((x, y + 1));
+    	}
+    	if top {
+    		neighbors.insert((x, y - 1));
+    	}
+    	if left {
+    		neighbors.insert((x - 1, y));
+    	}
+    	if left && bot {
+    		neighbors.insert((x - 1, y + 1));
+    	}
+    	if left && top {
+    		neighbors.insert((x - 1, y - 1));
+    	}
+    	return neighbors;
+    }
+
+    // TODO: Fix dumbness
+    fn neighbor_count(&self, cell: &(usize, usize)) ->
+    (HashSet<(usize, usize)>, HashSet<(usize, usize)>) {
+    	let mut neighbors: (HashSet<(usize, usize)>, HashSet<(usize, usize)>) =
+    		(HashSet::with_capacity(8), HashSet::with_capacity(8));
+    	for neighbor in self.neighbors(cell) {
+    		if self.grid.contains(&neighbor) {
+    			neighbors.0.insert(neighbor);
+    		} else {
+    			neighbors.1.insert(neighbor);
+    		}
+    	}
+    	return neighbors;
+    }
+    // TODO: undumb
+    fn step(&mut self) {
+    	let mut new_state: HashSet<(usize, usize)> =
+    		HashSet::with_capacity(self.width * self.height);
+
+    	for cell in self.grid.iter() {
+    		let (living, dead) = self.neighbor_count(cell);
+    		if living.len() < 2 {}
+    		else if living.len() == 2 || living.len() == 3 {
+    			new_state.insert(*cell);
+    		}
+    		else if living.len() > 3 {}
+
+    		for neighbor in dead {
+    			if self.neighbor_count(cell).0.len() == 3 {
+    				new_state.insert(neighbor);
     			}
     		}
     	}
+    	self.grid = new_state;
     }
-    fn clear(&mut self) {
-        self.grid = ndarray::Array2::from_elem((self.width, self.height), Cell::Dead)
+
+    fn render(&self, canvas: &mut Widget) {
+    	for x in 0..self.width {
+    		for y in 0..self.height {
+    			let mut cell = canvas.get_mut(x, y).unwrap();
+    			if self.grid.contains(&(x, y)) {
+                    cell.set_ch('\u{25AA}');
+                } else {
+                    cell.set_ch(' ');
+                }
+    		}
+    	}
     }
 }
 
-impl fmt::Display for World {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		let top_frame = "╔".to_owned() + &"═".repeat(self.width-1) + "╗";
-		let mut middle_frame = "\n".to_owned();
-		for row in 1..self.height {
-			middle_frame += "║";
-			for col in 1..self.width{
-				middle_frame += &self.grid[[col, row]].to_string();
-			}
-			middle_frame += "║\n";
-		}
-		let bottom_frame = "╚".to_owned() + &"═".repeat(self.width-1) + "╝";
-
-		write!(f, "{}{}{}", top_frame, middle_frame, bottom_frame)
-	}
-}
 
 fn main() {
-    let mut w = World::new(30, 50);
-    w.gen();
-    println!("{}", w);
+    //Create terminal and canvas
+    let mut term = Terminal::new().unwrap();
+    let mut canvas = Widget::new(term.size().0, term.size().1);
+    canvas.align(&term, HorizontalAlign::Left, VerticalAlign::Top, 0);
 
+    let (width, height) = canvas.size();
+    let mut w = World::new((width, height));
+    w.gen();
+
+    let mut auto = false;
+
+    'rendering: loop {
+        while let Some(Event::Key(c)) =
+            term.get_event(Some(Duration::from_millis(0)).unwrap()).unwrap()
+        {
+            match c {
+                'q' => break 'rendering,
+                'g' => w.gen(),
+                'n' => w.step(),
+                'a' => auto = true,
+                's' => auto = false,
+                _ => {},
+            }
+        }
+        if auto {
+        	w.step();
+        }
+        w.render(&mut canvas);
+        canvas.draw_into(&mut term);
+        term.swap_buffers().unwrap();
+    }
 }
