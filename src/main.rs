@@ -1,6 +1,3 @@
-// Here because linters go insane since most code is still unused.
-#![allow(dead_code)]
-
 extern crate rand;
 extern crate rustty;
 
@@ -33,7 +30,7 @@ impl World {
         self.grid.clear();
         for x in 1..self.width {
             for y in 1..self.height {
-                if rand::thread_rng().gen_weighted_bool(10) {
+                if rand::thread_rng().gen_weighted_bool(30) {
                     self.grid.insert((x, y));
                 }
             }
