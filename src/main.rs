@@ -38,12 +38,78 @@ impl World {
         }
     }
 
-    fn step(&mut self) {
-    	let mut new_state: Vec<(usize, usize)> =
-    		Vec::with_capacity(self.width * self.height);
-    	for living in &self.grid {
-    		unimplemented!()
+    // This is an obviously dumb way to do this
+    // TODO: Find a better way
+    fn neighbors(&self, cell: &(usize, usize)) -> HashSet<(usize, usize)>{
+    	let mut neighbors: HashSet<(usize, usize)> = HashSet::with_capacity(8);
+    	let (x, y) = (cell.0, cell.1);
+
+    	let top = y.checked_sub(1) != None;
+    	let bot = y.checked_add(1) <= Some(self.height);
+    	let right = x.checked_add(1) <= Some(self.width);
+    	let left = x.checked_sub(1) != None;
+
+    	if right {
+    		neighbors.insert((x + 1, y));
     	}
+    	if right && bot {
+    		neighbors.insert((x + 1, y + 1));
+    	}
+    	if right && top {
+    		neighbors.insert((x + 1, y - 1));
+    	}
+    	if bot {
+    		neighbors.insert((x, y + 1));
+    	}
+    	if top {
+    		neighbors.insert((x, y - 1));
+    	}
+    	if left {
+    		neighbors.insert((x - 1, y));
+    	}
+    	if left && bot {
+    		neighbors.insert((x - 1, y + 1));
+    	}
+    	if left && top {
+    		neighbors.insert((x - 1, y - 1));
+    	}
+    	return neighbors;
+    }
+
+    // TODO: Fix dumbness
+    fn neighbor_count(&self, cell: &(usize, usize)) ->
+    (HashSet<(usize, usize)>, HashSet<(usize, usize)>) {
+    	let mut neighbors: (HashSet<(usize, usize)>, HashSet<(usize, usize)>) =
+    		(HashSet::with_capacity(8), HashSet::with_capacity(8));
+    	for neighbor in self.neighbors(cell) {
+    		if self.grid.contains(&neighbor) {
+    			neighbors.0.insert(neighbor);
+    		} else {
+    			neighbors.1.insert(neighbor);
+    		}
+    	}
+    	return neighbors;
+    }
+    // TODO: undumb
+    fn step(&mut self) {
+    	let mut new_state: HashSet<(usize, usize)> =
+    		HashSet::with_capacity(self.width * self.height);
+
+    	for cell in self.grid.iter() {
+    		let (living, dead) = self.neighbor_count(cell);
+    		if living.len() < 2 {}
+    		else if living.len() == 2 || living.len() == 3 {
+    			new_state.insert(*cell);
+    		}
+    		else if living.len() > 3 {}
+
+    		for neighbor in dead {
+    			if self.neighbor_count(cell).0.len() == 3 {
+    				new_state.insert(neighbor);
+    			}
+    		}
+    	}
+    	self.grid = new_state;
     }
 
     fn render(&self, canvas: &mut Widget) {
@@ -51,9 +117,9 @@ impl World {
     		for y in 0..self.height {
     			let mut cell = canvas.get_mut(x, y).unwrap();
     			if self.grid.contains(&(x, y)) {
-                    cell.set_ch('█');
+                    cell.set_ch('\u{25AA}');
                 } else {
-                    cell.set_ch('░');
+                    cell.set_ch(' ');
                 }
     		}
     	}
@@ -71,15 +137,23 @@ fn main() {
     let mut w = World::new((width, height));
     w.gen();
 
+    let mut auto = false;
+
     'rendering: loop {
         while let Some(Event::Key(c)) =
-            term.get_event(Duration::from_millis(50)).unwrap()
+            term.get_event(Some(Duration::from_millis(0)).unwrap()).unwrap()
         {
             match c {
                 'q' => break 'rendering,
                 'g' => w.gen(),
-                _ => {}
+                'n' => w.step(),
+                'a' => auto = true,
+                's' => auto = false,
+                _ => {},
             }
+        }
+        if auto {
+        	w.step();
         }
         w.render(&mut canvas);
         canvas.draw_into(&mut term);
