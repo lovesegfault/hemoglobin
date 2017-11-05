@@ -4,5 +4,7 @@ version = "0.1.0"
 authors = ["Bernardo Meurer <meurerbernardo@gmail.com>"]
 
 [dependencies]
+bit-vec = "0.4.4"
+num = "0.1.40"
 rand = "0.3.17"
 rustty = "0.1.12"
