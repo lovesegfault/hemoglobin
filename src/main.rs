@@ -9,16 +9,17 @@ use rand::Rng;
 use rustty::{Terminal, Event, HasSize, CellAccessor};
 use rustty::ui::{Widget, Alignable, HorizontalAlign, VerticalAlign};
 
-type Board = HashSet<(usize, usize)>;
+type Cell = (usize, usize);
+type CellSet = HashSet<Cell>;
 
 struct World {
     height: usize,
     width: usize,
-    grid: Board,
+    grid: CellSet,
 }
 
 impl World {
-    fn new((width, height): (usize, usize)) -> World {
+    fn new((width, height): Cell) -> World {
         World {
             height: height,
             width: width,
@@ -38,8 +39,8 @@ impl World {
 
     // This is an obviously dumb way to do this
     // TODO: Find a better way
-    fn neighbors(&self, cell: &(usize, usize)) -> Board {
-        let mut neighbors: Board = HashSet::with_capacity(8);
+    fn neighbors(&self, cell: &Cell) -> CellSet {
+        let mut neighbors: CellSet = HashSet::with_capacity(8);
         let (x, y) = (cell.0, cell.1);
 
         let top = y.checked_sub(1) != None;
@@ -75,8 +76,8 @@ impl World {
     }
 
     // TODO: Fix dumbness
-    fn neighbor_count(&self, cell: &(usize, usize)) -> (Board, Board) {
-        let mut neighbors: (Board, Board) = (HashSet::with_capacity(8), HashSet::with_capacity(8));
+    fn neighbor_count(&self, cell: &Cell) -> (CellSet, CellSet) {
+        let mut neighbors: (CellSet, CellSet) = (HashSet::with_capacity(8), HashSet::with_capacity(8));
         for neighbor in self.neighbors(cell) {
             if self.grid.contains(&neighbor) {
                 neighbors.0.insert(neighbor);
@@ -88,7 +89,7 @@ impl World {
     }
     // TODO: undumb
     fn step(&mut self) {
-        let mut new_state: Board = HashSet::with_capacity(self.width * self.height);
+        let mut new_state: CellSet = HashSet::with_capacity(self.width * self.height);
 
         for cell in &self.grid {
             let (living, dead) = self.neighbor_count(cell);
