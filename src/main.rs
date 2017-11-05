@@ -11,7 +11,6 @@ use rustty::ui::{Widget, Alignable, HorizontalAlign, VerticalAlign};
 
 type Board = HashSet<(usize, usize)>;
 
-#[derive(Clone)]
 struct World {
     height: usize,
     width: usize,
@@ -133,10 +132,16 @@ fn main() {
     w.gen();
 
     let mut auto = false;
+    let mut delay;
 
     'rendering: loop {
+    	if auto {
+    		delay = 0;
+    	} else {
+    		delay = 10;
+    	}
         while let Some(Event::Key(c)) =
-            term.get_event(Some(Duration::from_millis(0)).unwrap())
+            term.get_event(Some(Duration::from_millis(delay)).unwrap())
                 .unwrap()
         {
             match c {
