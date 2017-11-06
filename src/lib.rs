@@ -88,9 +88,6 @@ impl World {
 
     fn decide_next_state(&self, cell: &Cell) -> bool {
         let state = self.get_state(cell);
-        if state > self.rule.len() -1 {
-            return false
-        }
         return self.rule[state];
     }
 
