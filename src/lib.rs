@@ -45,38 +45,25 @@ impl World {
     fn get_state(&self, cell: &Cell) -> usize {
 
         let (x, y) = (cell.0, cell.1);
-        let top = y.checked_sub(1) != None;
-        let bot = y.checked_add(1) <= Some(self.height);
-        let right = x.checked_add(1) <= Some(self.width);
-        let left = x.checked_sub(1) != None;
+        let t = (y + self.height - 1) % self.height;
+        let b = (y + 1) % self.height;
+        let l = (x + self.width - 1) % self.width;
+        let r = (x + 1) % self.width;
 
         let mut val = 0;
 
-        if left && top {
-            val += (self.grid.contains(&(x-1, y-1)) as usize) << 0;
-        }
-        if top {
-            val += (self.grid.contains(&(x, y-1)) as usize)  << 1;
-        }
-        if top && right {
-            val += (self.grid.contains(&(x+1, y-1)) as usize) << 2;
-        }
-        if left {
-            val += (self.grid.contains(&(x-1, y)) as usize) << 3;
-        }
+        val += (self.grid.contains(&(l, t)) as usize) << 0;
+        val += (self.grid.contains(&(x, t)) as usize) << 1;
+        val += (self.grid.contains(&(r, t)) as usize) << 2;
+
+        val += (self.grid.contains(&(l, y)) as usize) << 3;
         val += (self.grid.contains(&(x, y)) as usize) << 4;
-        if right {
-            val += (self.grid.contains(&(x+1, y)) as usize) << 5;
-        }
-        if left && bot {
-            val += (self.grid.contains(&(x-1, y+1)) as usize) << 6;
-        }
-        if bot {
-            val += (self.grid.contains(&(x, y+1)) as usize) << 7;
-        }
-        if bot && right {
-            val += (self.grid.contains(&(x+1, y+1)) as usize) << 8;
-        }
+        val += (self.grid.contains(&(r, y)) as usize) << 5;
+
+        val += (self.grid.contains(&(l, b)) as usize) << 6;
+        val += (self.grid.contains(&(x, b)) as usize) << 7;
+        val += (self.grid.contains(&(r, b)) as usize) << 8;
+
         val
     }
 
@@ -94,35 +81,22 @@ impl World {
         let mut neighbors: CellSet = HashSet::with_capacity(8);
         let (x, y) = (cell.0, cell.1);
 
-        let top = y.checked_sub(1) != None;
-        let bot = y.checked_add(1) <= Some(self.height);
-        let right = x.checked_add(1) <= Some(self.width);
-        let left = x.checked_sub(1) != None;
+        let t = (y + self.height - 1) % self.height;
+        let b = (y + 1) % self.height;
+        let l = (x + self.width - 1) % self.width;
+        let r = (x + 1) % self.width;
 
-        if right {
-            neighbors.insert((x + 1, y));
-        }
-        if right && bot {
-            neighbors.insert((x + 1, y + 1));
-        }
-        if right && top {
-            neighbors.insert((x + 1, y - 1));
-        }
-        if bot {
-            neighbors.insert((x, y + 1));
-        }
-        if top {
-            neighbors.insert((x, y - 1));
-        }
-        if left {
-            neighbors.insert((x - 1, y));
-        }
-        if left && bot {
-            neighbors.insert((x - 1, y + 1));
-        }
-        if left && top {
-            neighbors.insert((x - 1, y - 1));
-        }
+        neighbors.insert((l, t));
+        neighbors.insert((x, t));
+        neighbors.insert((r, t));
+
+        neighbors.insert((l, y));
+        neighbors.insert((r, y));
+
+        neighbors.insert((l, b));
+        neighbors.insert((x, b));
+        neighbors.insert((r, b));
+
         neighbors
     }
 
