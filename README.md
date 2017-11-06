@@ -3,7 +3,7 @@
 
 A Cellular Automaton written in Rust
 
-To run, install rust and then do this
+To run, [install Rust](https://www.rust-lang.org/en-US/install.html) and then in the project's root directory do this
 
 ```
 cargo run --release xxxxxxx
