@@ -33,8 +33,8 @@ impl World {
 
     pub fn gen(&mut self) {
         self.grid.clear();
-        for x in 1..self.width {
-            for y in 1..self.height {
+        for x in 0..self.width {
+            for y in 0..self.height {
                 if rand::thread_rng().gen_weighted_bool(30) {
                     self.grid.insert((x, y));
                 }
@@ -82,7 +82,7 @@ impl World {
 
     fn decide_next_state(&self, cell: &Cell) -> bool {
         let state = self.get_state(cell);
-        if state > self.rule.len() -1 {
+        if state > self.rule.len() - 1 {
             return false
         }
         return self.rule[state];
