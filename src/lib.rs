@@ -23,10 +23,16 @@ pub struct World {
 
 impl World {
     pub fn new((width, height): Cell, rule: BigInt) -> World {
+        let rule_reverse = BitVec::from_bytes(&rule.to_bytes_be().1);
+        let mut rule = BitVec::from_elem(512, false);
+        for i in 0..rule_reverse.len() {
+            let ir = rule_reverse.len() - i - 1;
+            rule.set(i, rule_reverse[ir]);
+        }
         World {
             height: height,
             width: width,
-            rule: BitVec::from_bytes(&rule.to_bytes_be().1),
+            rule: rule,
             grid: HashSet::with_capacity(height * width),
         }
     }
