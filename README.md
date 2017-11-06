@@ -9,4 +9,4 @@ To run, install rust and then do this
 cargo run --release xxxxxxx
 ```
 
-where `xxxxxxx` is a number that encodes the rule for the automaton. This number can be anything from 0 to 2^512 -1.
+where `xxxxxxx` is a number that encodes the rule for the automaton. This number can be anything from 0 to 2^512 -1. Once the program starts, hit `a` to start the automaton, `g` to regenerate a new starting state, and `q` to quit.
