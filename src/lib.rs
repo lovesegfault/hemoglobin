@@ -160,7 +160,7 @@ impl World {
             for y in 0..self.height {
                 let mut cell = canvas.get_mut(x, y).unwrap();
                 if self.grid.contains(&(x, y)) {
-                    cell.set_ch('\u{25AA}');
+                    cell.set_ch('\u{2588}');
                 } else {
                     cell.set_ch(' ');
                 }
