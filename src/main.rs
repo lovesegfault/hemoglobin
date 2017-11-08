@@ -5,14 +5,13 @@ extern crate rustty;
 use std::time::Duration;
 use std::env;
 
-use num::bigint::BigInt;
 use rustty::{Terminal, Event, HasSize};
 use rustty::ui::{Widget, Alignable, HorizontalAlign, VerticalAlign};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
     let rule_arg = &args[1];  // 0th arg is program name
-    let rule = rule_arg.parse::<BigInt>().unwrap();
+    let rule = hemoglobin::decimal_encoded_string_to_bitvec(rule_arg);
 
     //Create terminal and canvas
     let mut term = Terminal::new().unwrap();
