@@ -14,6 +14,22 @@ use rustty::CellAccessor;
 type Cell = (usize, usize);
 type CellSet = HashSet<Cell>;
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use num::bigint::Sign;
+
+    #[test]
+    fn test_parse_rule() {
+        let i = BigInt::new(Sign::Plus, vec![10]);
+        let bits = parse_rule(i);
+        assert!(bits[0]==false);
+        assert!(bits[1]==true);
+        assert!(bits[2]==false);
+        assert!(bits[3]==true);
+    }
+}
+
 fn parse_rule(rule: BigInt) -> BitVec{
     let rule_reverse = BitVec::from_bytes(&rule.to_bytes_be().1);
     let mut rule = BitVec::from_elem(512, false);
