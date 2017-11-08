@@ -209,7 +209,7 @@ impl World {
         self.grid.clear();
         for x in 0..self.width {
             for y in 0..self.height {
-                if rand::thread_rng().gen_weighted_bool(30) {
+                if rand::thread_rng().gen_weighted_bool(10) {
                     self.grid.insert((x, y));
                 }
             }
