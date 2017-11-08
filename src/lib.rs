@@ -66,12 +66,12 @@ mod tests {
     }
 
     #[test]
-    fn test_conway_kode() {
+    fn test_conway_code() {
         let expected = "476348294852520375132009738840824718882889556\
                         423255282629108876378472743729817205343700177\
                         683429960362194923168607044012736510546282236\
                         08960".parse::<BigInt>().unwrap();
-        assert_eq!(expected, conway_kode());
+        assert_eq!(expected, conway_code());
     }
 
     #[test]
@@ -124,7 +124,7 @@ mod tests {
     }
 }
 
-pub fn conway_kode() -> BigInt {
+pub fn conway_code() -> BigInt {
     let mut kode = BigInt::from(0);
     for state in 0..512 {
         let mut bit_count = 0usize;
