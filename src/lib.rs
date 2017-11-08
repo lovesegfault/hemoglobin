@@ -60,28 +60,13 @@ mod tests {
     }
 
     #[test]
-    fn test_board_from_Gidney_string() {
-        let board = board_from_gidney_string(vec!["   ", "   "]);
-        assert_eq!(board, CellSet::new());
-        let board = board_from_gidney_string(vec!["#  ", "   "]);
+    fn test_grid_from_gidney_string() {
+        let grid = grid_from_gidney_string(vec!["   ", "   "]);
+        assert_eq!(grid, CellSet::new());
+        let grid = grid_from_gidney_string(vec!["#  ", "   "]);
         let mut expected = CellSet::new();
         expected.insert((0, 0));
-        assert_eq!(board, expected);
-    }
-
-    #[test]
-    fn test_conway_kode() {
-        let conway_kode = conway_kode();
-        let mut w = World::new((3, 3), conway_kode);
-        let grid = board_from_gidney_string(vec!["   ",
-                                                 " # ",
-                                                 "   "]);
-        w.set_grid(grid);
-        w.step();
-        let expected_grid = board_from_gidney_string(vec!["   ",
-                                                          "   ",
-                                                          "   "]);
-        assert_eq!(w.grid, expected_grid);
+        assert_eq!(grid, expected);
     }
 }
 
@@ -103,7 +88,7 @@ fn conway_kode() -> BigInt {
     kode
 }
 
-pub fn board_from_gidney_string(s: Vec<&str>) -> CellSet {
+pub fn grid_from_gidney_string(s: Vec<&str>) -> CellSet {
     let mut result = CellSet::new();
     for (y, row) in s.iter().enumerate() {
         for (x, c) in row.chars().enumerate() {
