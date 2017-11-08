@@ -188,6 +188,20 @@ fn bigint_to_bitvec(x: BigInt) -> BitVec {
 fn get_state(grid: &CellSet, cell: &Cell) -> usize {
     let (x, y) = (cell.0, cell.1);
     let mut val = 0;
+    // We now build up an integer representation of the state centered at cell.
+    // We iterate over neighboring cells: dx and dy go over [0, 1, 2] where
+    //   0 means "minus one", so "left" for x or "up" for y
+    //   1 means same row (for x) or column (for y).
+    //   2 means "plus one", so "right" for x or "down" for y.
+    // Therefore, for a given dx and dy, the coordinates of the neighbor are
+    // (x+dx-1, y+dy-1). However, if we're at an edge, these coordinates might
+    // take us off the grid. This shows up as a failure to do the subtraction
+    // because getting a negative number means we're off the grid. We check
+    // for this failure with checked_sub and return false if the call returns
+    // None.
+    //
+    // TODO: replace "integer representation" with canonical name once we pick
+    // one.
     for dx in 0..3 {
         for dy in 0..3 {
             if match (x+dx).checked_sub(1) {
@@ -196,8 +210,7 @@ fn get_state(grid: &CellSet, cell: &Cell) -> usize {
                     None => false,
                     Some(yy) => grid.contains(&(xx, yy))
                 }
-            }{ val += 1 << (dx + (3*dy));
-            }
+            }{ val += 1 << (dx + (3*dy)); }
         }
     }
     val
