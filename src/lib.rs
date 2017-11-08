@@ -70,7 +70,7 @@ mod tests {
     }
 }
 
-fn conway_kode() -> BigInt {
+pub fn conway_kode() -> BigInt {
     let mut kode = BigInt::from(0);
     for state in 0..512 {
         let mut bit_count = 0usize;
