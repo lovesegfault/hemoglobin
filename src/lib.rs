@@ -17,34 +17,114 @@ type CellSet = HashSet<Cell>;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use num::bigint::Sign;
+    use num::PrimInt;
 
     #[test]
-    fn test_parse_rule() {
-        let i = BigInt::new(Sign::Plus, vec![10]);
-        let bits = parse_rule(i);
-        assert!(bits[0]==false);
-        assert!(bits[1]==true);
-        assert!(bits[2]==false);
-        assert!(bits[3]==true);
+    fn test_bitvec_bit_order() {
+        // Consider a two-byte number where the firt byte's value is 10 and
+        // the second byte's value is 7. Converting to a little endian byte
+        // array should make the 0th byte 10 and the 1th byte 7.
+        let ten_seven = BigInt::from(10 + 7*(2.pow(8))); 
+        let bytes = ten_seven.to_bytes_le().1;
+        assert_eq!(bytes[0], 10);
+        assert_eq!(bytes[1], 7);
+        // Now check that we can convert this to a BitVec. The bytes are in
+        // little endian order, but the bits within each byte are big endian:
+        // [00001010][00000111]
+        let bits = BitVec::from_bytes(&bytes);
+        for i in 0..16 {
+            println!("{}", bits[i]);
+        }
+        let expected = vec![
+            // 0th byte representing 10
+            false,
+            false,
+            false,
+            false,
+            true,
+            false,
+            true,
+            false,
+            // 1st byte representing 7
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            true,
+            true];
+        for i in 0..16 {
+            assert_eq!(bits[i], expected[i]);
+        }
+    }
+
+    #[test]
+    fn test_board_from_Gidney_string() {
+        let board = board_from_gidney_string(vec!["   ", "   "]);
+        assert_eq!(board, CellSet::new());
+        let board = board_from_gidney_string(vec!["#  ", "   "]);
+        let mut expected = CellSet::new();
+        expected.insert((0, 0));
+        assert_eq!(board, expected);
+    }
+
+    #[test]
+    fn test_conway_kode() {
+        let conway_kode = conway_kode();
+        let mut w = World::new((3, 3), conway_kode);
+        let grid = board_from_gidney_string(vec!["   ",
+                                                 " # ",
+                                                 "   "]);
+        w.set_grid(grid);
+        w.step();
+        let expected_grid = board_from_gidney_string(vec!["   ",
+                                                          "   ",
+                                                          "   "]);
+        assert_eq!(w.grid, expected_grid);
     }
 }
 
-fn parse_rule(rule: BigInt) -> BitVec{
-    let rule_reverse = BitVec::from_bytes(&rule.to_bytes_be().1);
-    let mut rule = BitVec::from_elem(512, false);
-    for i in 0..rule_reverse.len() {
-        let ir = rule_reverse.len() - i - 1;
-        rule.set(i, rule_reverse[ir]);
+fn conway_kode() -> BigInt {
+    let mut kode = BigInt::from(0);
+    for state in 0..512 {
+        let mut bit_count = 0usize;
+        let current_state = (state >> 4) % 2;
+        for bit_offset in [0, 1, 2, 3, 5, 6, 7, 8].iter() {
+            bit_count += (state >> bit_offset) & 1usize;
+        }
+        let result = BigInt::from(match bit_count {
+            2 => current_state,
+            3 => 1,
+            _ => 0
+        });
+    kode = kode + (result << state);
     }
-    rule
+    kode
+}
+
+pub fn board_from_gidney_string(s: Vec<&str>) -> CellSet {
+    let mut result = CellSet::new();
+    for (y, row) in s.iter().enumerate() {
+        for (x, c) in row.chars().enumerate() {
+            if c == '#' {
+                result.insert((x, y));
+            }
+        }
+    }
+    result
+}
+
+fn rule_int_to_bitvec(x: BigInt) -> BitVec {
+    let padded_x = x + (BigInt::from(1) << 512);
+    BitVec::from_bytes(&padded_x.to_bytes_le().1)
 }
 
 pub struct World {
     height: usize,
     width: usize,
     rule: BitVec,
-    grid: CellSet,
+    pub grid: CellSet,
 }
 
 impl World {
@@ -52,9 +132,13 @@ impl World {
         World {
             height: height,
             width: width,
-            rule: parse_rule(rule),
+            rule: rule_int_to_bitvec(rule),
             grid: HashSet::with_capacity(height * width),
         }
+    }
+
+    pub fn set_grid(&mut self, grid: CellSet) {
+        self.grid = grid;
     }
 
     pub fn gen(&mut self) {
@@ -68,40 +152,26 @@ impl World {
         }
     }
 
+    fn get_cell(&self, x: Option<usize>, y: Option<usize>) -> bool {
+        match x {
+            None => false,
+            Some(xx) => match y {
+                None => false,
+                Some(yy) => self.grid.contains(&(xx, yy))
+            }
+        }
+    }
+
     fn get_state(&self, cell: &Cell) -> usize {
 
         let (x, y) = (cell.0, cell.1);
-        let top = y.checked_sub(1) != None;
-        let bot = y.checked_add(1) <= Some(self.height);
-        let right = x.checked_add(1) <= Some(self.width);
-        let left = x.checked_sub(1) != None;
-
         let mut val = 0;
-
-        if left && top {
-            val += (self.grid.contains(&(x-1, y-1)) as usize) << 0;
-        }
-        if top {
-            val += (self.grid.contains(&(x, y-1)) as usize)  << 1;
-        }
-        if top && right {
-            val += (self.grid.contains(&(x+1, y-1)) as usize) << 2;
-        }
-        if left {
-            val += (self.grid.contains(&(x-1, y)) as usize) << 3;
-        }
-        val += (self.grid.contains(&(x, y)) as usize) << 4;
-        if right {
-            val += (self.grid.contains(&(x+1, y)) as usize) << 5;
-        }
-        if left && bot {
-            val += (self.grid.contains(&(x-1, y+1)) as usize) << 6;
-        }
-        if bot {
-            val += (self.grid.contains(&(x, y+1)) as usize) << 7;
-        }
-        if bot && right {
-            val += (self.grid.contains(&(x+1, y+1)) as usize) << 8;
+        for dx in 0..3 {
+            for dy in 0..3 {
+                if self.get_cell((x+dx).checked_sub(1), (y+dy).checked_sub(1)) {
+                    val += 1 << (dx + (3*dy));
+                }
+            }
         }
         val
     }
