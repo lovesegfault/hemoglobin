@@ -14,14 +14,117 @@ use rustty::CellAccessor;
 type Cell = (usize, usize);
 type CellSet = HashSet<Cell>;
 
+pub struct Rule {
+    dec: BigInt,
+    bin: BitVec,
+}
+
+impl From<BigInt> for Rule {
+    fn from(x: BigInt) -> Self {
+        Rule {
+            dec: x.clone(),
+            bin: {
+                let result_reversed = BitVec::from_bytes(&x.to_bytes_be().1);
+                let mut result = BitVec::from_elem(512, false);
+                for i in 0..result_reversed.len() {
+                    result.set(i, result_reversed[result_reversed.len() - i - 1]);
+                }
+                result
+            },
+        }
+    }
+}
+
+impl From<String> for Rule {
+    fn from(s: String) -> Self {
+        Rule::from(s.parse::<BigInt>().unwrap())
+    }
+}
+
+pub struct World {
+    height: usize,
+    width: usize,
+    rule: Rule,
+    pub grid: CellSet,
+}
+
+impl World {
+    pub fn new(width: usize, height: usize, rule: Rule) -> World {
+        World {
+            height: height,
+            width: width,
+            rule: rule,
+            grid: HashSet::with_capacity(height * width),
+        }
+    }
+
+    pub fn gen(&mut self) {
+        self.grid.clear();
+        for x in 0..self.width {
+            for y in 0..self.height {
+                if rand::thread_rng().gen_weighted_bool(10) {
+                    self.grid.insert((x, y));
+                }
+            }
+        }
+    }
+
+    fn decide_next_state(&self, cell: &Cell) -> bool {
+        let state = get_state(&self.grid, cell);
+        return self.rule.bin[state];
+    }
+
+    pub fn step(&mut self) {
+        let mut new_state: CellSet = HashSet::with_capacity(self.width * self.height);
+
+        for x in 0..self.width {
+            for y in 0..self.height {
+                let cell = (x, y);
+                if self.decide_next_state(&cell) {
+                    new_state.insert(cell);
+                }
+            }
+        }
+        self.grid = new_state;
+    }
+
+    pub fn render(&self, canvas: &mut Widget) {
+        for x in 0..self.width {
+            for y in 0..self.height {
+                let mut cell = canvas.get_mut(x, y).unwrap();
+                if self.grid.contains(&(x, y)) {
+                    cell.set_ch('\u{2588}');
+                } else {
+                    cell.set_ch(' ');
+                }
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use num::PrimInt;
 
     const EXPECTED_1082_BITS: [bool; 16] = [
-        false, true, false, true, false, false, false, false,
-        true, true, true, false, false, false, false, false];
+        false,
+        true,
+        false,
+        true,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+    ];
     // 1802 = 10 + 7*(2^8), so writing in little endian byte order but writing
     // the bits within each byte with MSB on the left, we have
     // [00001010][00000111].
@@ -32,7 +135,7 @@ mod tests {
         // Consider a two-byte number where the firt byte's value is 10 and
         // the second byte's value is 7. Converting to a little endian byte
         // array should make the 0th byte 10 and the 1th byte 7.
-        let ten_seven = BigInt::from(10 + 7*(2.pow(8)));
+        let ten_seven = BigInt::from(10 + 7 * (2.pow(8)));
         let bytes = ten_seven.to_bytes_le().1;
         assert_eq!(bytes[0], 10);
         assert_eq!(bytes[1], 7);
@@ -59,7 +162,8 @@ mod tests {
             false,
             true,
             true,
-            true];
+            true,
+        ];
         for i in 0..16 {
             assert_eq!(bits[i], expected[i]);
         }
@@ -70,7 +174,9 @@ mod tests {
         let expected = "476348294852520375132009738840824718882889556\
                         423255282629108876378472743729817205343700177\
                         683429960362194923168607044012736510546282236\
-                        08960".parse::<BigInt>().unwrap();
+                        08960"
+            .parse::<BigInt>()
+            .unwrap();
         assert_eq!(expected, conway_code());
     }
 
@@ -127,7 +233,7 @@ mod tests {
     }
 
     #[test]
-    fn test_bigint_to_bitvec(){
+    fn test_bigint_to_bitvec() {
         let v = bigint_to_bitvec(BigInt::from(1802));
         for i in 0..16 {
             assert_eq!(v[i], EXPECTED_1082_BITS[i]);
@@ -162,28 +268,13 @@ pub fn conway_code() -> BigInt {
         let result = BigInt::from(match bit_count {
             2 => current_state,
             3 => 1,
-            _ => 0
+            _ => 0,
         });
-    kode = kode + (result << state);
+        kode = kode + (result << state);
     }
     kode
 }
 
-pub fn decimal_encoded_string_to_bitvec(s: &str) -> BitVec {
-    let val = s.parse::<BigInt>().unwrap();
-    bigint_to_bitvec(val)
-}
-
-fn bigint_to_bitvec(x: BigInt) -> BitVec {
-    let result_reversed = BitVec::from_bytes(&x.to_bytes_be().1);
-    let mut result = BitVec::from_elem(512, false);
-    for i in 0..result_reversed.len() {
-        result.set(
-            i,
-            result_reversed[result_reversed.len() - i - 1]);
-    }
-    result
-}
 
 fn get_state(grid: &CellSet, cell: &Cell) -> usize {
     let (x, y) = (cell.0, cell.1);
@@ -204,75 +295,19 @@ fn get_state(grid: &CellSet, cell: &Cell) -> usize {
     // one.
     for dx in 0..3 {
         for dy in 0..3 {
-            if match (x+dx).checked_sub(1) {
+            if match (x + dx).checked_sub(1) {
                 None => false,
-                Some(xx) => match (y+dy).checked_sub(1) {
-                    None => false,
-                    Some(yy) => grid.contains(&(xx, yy))
+                Some(xx) => {
+                    match (y + dy).checked_sub(1) {
+                        None => false,
+                        Some(yy) => grid.contains(&(xx, yy)),
+                    }
                 }
-            }{ val += 1 << (dx + (3*dy)); }
+            }
+            {
+                val += 1 << (dx + (3 * dy));
+            }
         }
     }
     val
-}
-
-pub struct World {
-    height: usize,
-    width: usize,
-    rule: BitVec,
-    pub grid: CellSet,
-}
-
-impl World {
-    pub fn new((width, height): Cell, rule: BitVec) -> World {
-        World {
-            height: height,
-            width: width,
-            rule: rule,
-            grid: HashSet::with_capacity(height * width),
-        }
-    }
-
-    pub fn gen(&mut self) {
-        self.grid.clear();
-        for x in 0..self.width {
-            for y in 0..self.height {
-                if rand::thread_rng().gen_weighted_bool(10) {
-                    self.grid.insert((x, y));
-                }
-            }
-        }
-    }
-
-    fn decide_next_state(&self, cell: &Cell) -> bool {
-        let state = get_state(&self.grid, cell);
-        return self.rule[state];
-    }
-
-    pub fn step(&mut self) {
-        let mut new_state: CellSet = HashSet::with_capacity(self.width * self.height);
-
-        for x in 0..self.width {
-            for y in 0..self.height {
-                let cell = (x, y);
-                if self.decide_next_state(&cell) {
-                    new_state.insert(cell);
-                }
-            }
-        }
-        self.grid = new_state;
-    }
-
-    pub fn render(&self, canvas: &mut Widget) {
-        for x in 0..self.width {
-            for y in 0..self.height {
-                let mut cell = canvas.get_mut(x, y).unwrap();
-                if self.grid.contains(&(x, y)) {
-                    cell.set_ch('\u{2588}');
-                } else {
-                    cell.set_ch(' ');
-                }
-            }
-        }
-    }
 }
