@@ -75,17 +75,17 @@ mod tests {
     }
 
     #[test]
-    fn test_grid_from_gidney_string() {
+    fn test_grid_from_string() {
 
-        let grid = grid_from_gidney_string(vec!["   ", "   "]);
+        let grid = grid_from_string(vec!["   ", "   "]);
         let mut expected = CellSet::new();
         assert_eq!(grid, expected);
 
-        let grid = grid_from_gidney_string(vec!["#  ", "   "]);
+        let grid = grid_from_string(vec!["#  ", "   "]);
         expected.insert((0, 0));
         assert_eq!(grid, expected);
 
-        let grid = grid_from_gidney_string(vec!["#  ", " # "]);
+        let grid = grid_from_string(vec!["#  ", " # "]);
         expected.insert((1, 1));
         assert_eq!(grid, expected);
     }
@@ -142,7 +142,22 @@ pub fn conway_code() -> BigInt {
     kode
 }
 
-pub fn grid_from_gidney_string(s: Vec<&str>) -> CellSet {
+fn grid_from_string(s: Vec<&str>) -> CellSet {
+    /// Returns a CellSet interpreted from a string representation
+    ///
+    /// # Arguments
+    ///
+    /// * `s` - Representation of the grid. Each element of the vector
+    /// represents a row in the grid. Hash marks # indicate live cells.
+    /// For example vec!['#  ', '   ', ' # '] represents a grid with live
+    /// cells at (0, 0) and (2, 1).
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use hemoglobin::grid_from_string;
+    /// let grid = test_grid_from_string(vec!['#  ', '   ', ' # ']);
+    /// ```
     let mut result = CellSet::new();
     for (y, row) in s.iter().enumerate() {
         for (x, c) in row.chars().enumerate() {
