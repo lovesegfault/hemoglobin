@@ -74,6 +74,33 @@ mod tests {
         assert_eq!(expected, conway_code());
     }
 
+    fn grid_from_string(s: Vec<&str>) -> CellSet {
+        /// Returns a CellSet interpreted from a string representation
+        ///
+        /// # Arguments
+        ///
+        /// * `s` - Representation of the grid. Each element of the vector
+        /// represents a row in the grid. Hash marks # indicate live cells.
+        /// For example vec!['#  ', '   ', ' # '] represents a grid with live
+        /// cells at (0, 0) and (2, 1).
+        ///
+        /// # Example
+        ///
+        /// ```
+        /// use hemoglobin::grid_from_string;
+        /// let grid = test_grid_from_string(vec!['#  ', '   ', ' # ']);
+        /// ```
+        let mut result = CellSet::new();
+        for (y, row) in s.iter().enumerate() {
+            for (x, c) in row.chars().enumerate() {
+                if c == '#' {
+                    result.insert((x, y));
+                }
+            }
+        }
+        result
+    }
+
     #[test]
     fn test_grid_from_string() {
 
@@ -140,33 +167,6 @@ pub fn conway_code() -> BigInt {
     kode = kode + (result << state);
     }
     kode
-}
-
-fn grid_from_string(s: Vec<&str>) -> CellSet {
-    /// Returns a CellSet interpreted from a string representation
-    ///
-    /// # Arguments
-    ///
-    /// * `s` - Representation of the grid. Each element of the vector
-    /// represents a row in the grid. Hash marks # indicate live cells.
-    /// For example vec!['#  ', '   ', ' # '] represents a grid with live
-    /// cells at (0, 0) and (2, 1).
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use hemoglobin::grid_from_string;
-    /// let grid = test_grid_from_string(vec!['#  ', '   ', ' # ']);
-    /// ```
-    let mut result = CellSet::new();
-    for (y, row) in s.iter().enumerate() {
-        for (x, c) in row.chars().enumerate() {
-            if c == '#' {
-                result.insert((x, y));
-            }
-        }
-    }
-    result
 }
 
 pub fn decimal_encoded_string_to_bitvec(s: &str) -> BitVec {
