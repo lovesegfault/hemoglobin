@@ -11,11 +11,18 @@ use rand::Rng;
 use rustty::ui::Widget;
 use rustty::CellAccessor;
 
+#[macro_use]
+mod macros {
+    #[macro_export]
+    macro_rules! ovec { ($($elem:expr),* $(,)*) => { vec![$($elem.to_owned()),*] } }
+}
+
 type Cell = (usize, usize);
 type CellSet = HashSet<Cell>;
 
+
 #[derive(PartialEq, Eq, Debug)]
-struct Grid {
+pub struct Grid {
     grid: CellSet,
     bounds: Option<(usize, usize)>,
 }
@@ -77,14 +84,15 @@ impl From<Vec<String>> for Grid {
     ///
     /// * `s` - Representation of the grid. Each element of the vector
     /// represents a row in the grid. Hash marks # indicate live cells.
-    /// For example vec!['#  ', '   ', ' # '] represents a grid with live
+    /// For example ovec!["#  ", "   ", " # "] represents a grid with live
     /// cells at (0, 0) and (2, 1).
     ///
     /// # Example
     ///
     /// ```
-    /// use hemoglobin::grid_from_string;
-    /// let grid = test_grid_from_string(vec!['#  ', '   ', ' # ']);
+    /// use hemoglobin::Grid;
+    ///
+    /// let grid = Grid::from(ovec!["#  ", "   ", " # "]);
     /// ```
     fn from(s: Vec<String>) -> Self {
         let mut result = Grid::new(None);
@@ -180,8 +188,6 @@ impl World {
 mod tests {
     use super::*;
     use num::PrimInt;
-
-    macro_rules! ovec { ($($elem:expr),* $(,)*) => { vec![$($elem.to_owned()),*] } }
 
     const EXPECTED_1082_BITS: [bool; 16] = [
         false,
