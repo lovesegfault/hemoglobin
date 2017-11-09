@@ -141,7 +141,7 @@ impl World {
 
     fn decide_next_state(&self, cell: &Cell) -> bool {
         let state = get_state(&self.grid, cell);
-        return self.rule.bin[state];
+        self.rule.bin[state]
     }
 
     pub fn step(&mut self) {
