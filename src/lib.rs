@@ -30,7 +30,7 @@ impl Grid {
             _ => Grid {
                 grid: CellSet::with_capacity(b.unwrap().0 * b.unwrap().1),
                 bounds: b,
-            }
+            },
         }
 
     }
