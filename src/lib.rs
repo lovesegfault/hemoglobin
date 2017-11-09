@@ -181,6 +181,8 @@ mod tests {
     use super::*;
     use num::PrimInt;
 
+    macro_rules! ovec { ($($elem:expr),* $(,)*) => { vec![$($elem.to_owned()),*] } }
+
     const EXPECTED_1082_BITS: [bool; 16] = [
         false,
         true,
@@ -275,15 +277,15 @@ mod tests {
     #[test]
     fn test_grid_from_string() {
 
-        let grid = Grid::from(vec!["   ", "   "]);
+        let grid = Grid::from(ovec!["   ", "   "]);
         let mut expected = Grid::new(None);
         assert_eq!(grid, expected);
 
-        let grid = Grid::from(vec!["#  ", "   "]);
+        let grid = Grid::from(ovec!["#  ", "   "]);
         expected.insert((0, 0));
         assert_eq!(grid, expected);
 
-        let grid = Grid::from(vec!["#  ", " # "]);
+        let grid = Grid::from(ovec!["#  ", " # "]);
         expected.insert((1, 1));
         assert_eq!(grid, expected);
     }
