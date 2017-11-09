@@ -207,7 +207,7 @@ mod tests {
     // As a BitVec, we want 01010000 11100000.
 
     #[test]
-    fn test_bitvec_bit_order() {
+    fn test_bitvec_order() {
         // Consider a two-byte number where the firt byte's value is 10 and
         // the second byte's value is 7. Converting to a little endian byte
         // array should make the 0th byte 10 and the 1th byte 7.
@@ -245,7 +245,7 @@ mod tests {
         }
     }
 
-    fn conway_code() -> BigInt {
+    fn gen_conway_dec() -> BigInt {
         let mut kode = BigInt::from(0);
         for state in 0..512 {
             let mut bit_count = 0usize;
@@ -264,14 +264,14 @@ mod tests {
     }
 
     #[test]
-    fn test_conway_code() {
+    fn test_gen_conway_dec() {
         let expected = "476348294852520375132009738840824718882889556\
                         423255282629108876378472743729817205343700177\
                         683429960362194923168607044012736510546282236\
                         08960"
             .parse::<BigInt>()
             .unwrap();
-        assert_eq!(expected, conway_code());
+        assert_eq!(expected, gen_conway_dec());
     }
 
     #[test]
@@ -291,7 +291,7 @@ mod tests {
     }
 
     #[test]
-    fn test_decimal_encoded_string_to_bitvec() {
+    fn test_rule_dec_str_to_Rule() {
         let rule = Rule::from("1802".to_string());
         for i in 0..16 {
             assert_eq!(rule.bin[i], EXPECTED_1082_BITS[i]);
@@ -299,7 +299,7 @@ mod tests {
     }
 
     #[test]
-    fn test_bigint_to_bitvec() {
+    fn test_Rule_from_bigint() {
         let rule = Rule::from(BigInt::from(1802));
         for i in 0..16 {
             assert_eq!(rule.bin[i], EXPECTED_1082_BITS[i]);
