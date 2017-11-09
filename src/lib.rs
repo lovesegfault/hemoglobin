@@ -140,7 +140,7 @@ impl World {
     }
 
     fn decide_next_state(&self, cell: &Cell) -> bool {
-        let state = get_state(&self, cell);
+        let state = get_state(&self.grid, cell);
         return self.rule.bin[state];
     }
 
@@ -276,38 +276,37 @@ mod tests {
     fn test_grid_from_string() {
 
         let grid = Grid::from(vec!["   ", "   "]);
-        let mut expected = CellSet::new();
+        let mut expected = Grid::new(None);
         assert_eq!(grid, expected);
 
-        let grid = grid_from_string(vec!["#  ", "   "]);
+        let grid = Grid::from(vec!["#  ", "   "]);
         expected.insert((0, 0));
         assert_eq!(grid, expected);
 
-        let grid = grid_from_string(vec!["#  ", " # "]);
+        let grid = Grid::from(vec!["#  ", " # "]);
         expected.insert((1, 1));
         assert_eq!(grid, expected);
     }
 
     #[test]
     fn test_decimal_encoded_string_to_bitvec() {
-        let s = "1802";
-        let bitvec = decimal_encoded_string_to_bitvec(s);
+        let rule = Rule::from("1802".to_string());
         for i in 0..16 {
-            assert_eq!(bitvec[i], EXPECTED_1082_BITS[i]);
+            assert_eq!(rule.bin[i], EXPECTED_1082_BITS[i]);
         }
     }
 
     #[test]
     fn test_bigint_to_bitvec() {
-        let v = bigint_to_bitvec(BigInt::from(1802));
+        let rule = Rule::from(BigInt::from(1802));
         for i in 0..16 {
-            assert_eq!(v[i], EXPECTED_1082_BITS[i]);
+            assert_eq!(rule.bin[i], EXPECTED_1082_BITS[i]);
         }
     }
 
     #[test]
     fn test_get_state() {
-        let mut grid = CellSet::new();
+        let mut grid = Grid::new(None);
         //  0
         // 0#< look here
         //  ^
@@ -325,7 +324,7 @@ mod tests {
 
 
 
-fn get_state(world: &World, cell: &Cell) -> usize {
+fn get_state(grid: &Grid, cell: &Cell) -> usize {
     let (x, y) = (cell.0, cell.1);
     let mut val = 0;
     // We now build up an integer representation of the state centered at cell.
@@ -349,7 +348,7 @@ fn get_state(world: &World, cell: &Cell) -> usize {
                 Some(xx) => {
                     match (y + dy).checked_sub(1) {
                         None => false,
-                        Some(yy) => world.grid.contains(&(xx, yy)),
+                        Some(yy) => grid.contains(&(xx, yy)),
                     }
                 }
             }
