@@ -30,7 +30,7 @@ impl Grid {
             _ => Grid {
                 grid: CellSet::with_capacity(b.unwrap().0 * b.unwrap().1),
                 bounds: b,
-            },
+            }
         }
 
     }
@@ -132,7 +132,7 @@ pub struct World {
 }
 
 impl World {
-    pub fn new(width: usize, height: usize, rule: Rule) -> World {
+    pub fn new(width: usize, height: usize, rule: Rule) -> Self {
         World {
             rule: rule,
             grid: Grid::new(Some((width, height))),
