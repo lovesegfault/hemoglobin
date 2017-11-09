@@ -71,22 +71,22 @@ impl Grid {
 }
 
 impl From<Vec<String>> for Grid {
+    /// Returns a Grid interpreted from a string representation
+    ///
+    /// # Arguments
+    ///
+    /// * `s` - Representation of the grid. Each element of the vector
+    /// represents a row in the grid. Hash marks # indicate live cells.
+    /// For example vec!['#  ', '   ', ' # '] represents a grid with live
+    /// cells at (0, 0) and (2, 1).
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use hemoglobin::grid_from_string;
+    /// let grid = test_grid_from_string(vec!['#  ', '   ', ' # ']);
+    /// ```
     fn from(s: Vec<String>) -> Self {
-        /// Returns a Grid interpreted from a string representation
-        ///
-        /// # Arguments
-        ///
-        /// * `s` - Representation of the grid. Each element of the vector
-        /// represents a row in the grid. Hash marks # indicate live cells.
-        /// For example vec!['#  ', '   ', ' # '] represents a grid with live
-        /// cells at (0, 0) and (2, 1).
-        ///
-        /// # Example
-        ///
-        /// ```
-        /// use hemoglobin::grid_from_string;
-        /// let grid = test_grid_from_string(vec!['#  ', '   ', ' # ']);
-        /// ```
         let mut result = Grid::new(None);
         for (y, row) in s.iter().enumerate() {
             for (x, c) in row.chars().enumerate() {
