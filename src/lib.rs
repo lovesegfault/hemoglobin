@@ -12,7 +12,7 @@ use rustty::ui::Widget;
 use rustty::CellAccessor;
 
 #[macro_use]
-mod macros {
+pub mod macros {
     #[macro_export]
     macro_rules! ovec { ($($elem:expr),* $(,)*) => { vec![$($elem.to_owned()),*] } }
 }
@@ -90,9 +90,10 @@ impl From<Vec<String>> for Grid {
     /// # Example
     ///
     /// ```
-    /// use hemoglobin::Grid;
+    /// # #[macro_use] extern crate hemoglobin; fn main(){
     ///
-    /// let grid = Grid::from(ovec!["#  ", "   ", " # "]);
+    /// let grid = hemoglobin::Grid::from(ovec!["#  ", "   ", " # "]);
+    /// # }
     /// ```
     fn from(s: Vec<String>) -> Self {
         let mut result = Grid::new(None);
