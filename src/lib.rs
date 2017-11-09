@@ -291,7 +291,7 @@ mod tests {
     }
 
     #[test]
-    fn test_rule_dec_str_to_Rule() {
+    fn test_rule_dec_str_to_rule() {
         let rule = Rule::from("1802".to_string());
         for i in 0..16 {
             assert_eq!(rule.bin[i], EXPECTED_1082_BITS[i]);
@@ -299,7 +299,7 @@ mod tests {
     }
 
     #[test]
-    fn test_Rule_from_bigint() {
+    fn test_rule_from_bigint() {
         let rule = Rule::from(BigInt::from(1802));
         for i in 0..16 {
             assert_eq!(rule.bin[i], EXPECTED_1082_BITS[i]);
