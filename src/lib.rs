@@ -14,6 +14,7 @@ use rustty::CellAccessor;
 type Cell = (usize, usize);
 type CellSet = HashSet<Cell>;
 
+#[derive(PartialEq, Eq, Debug)]
 struct Grid {
     grid: CellSet,
     bounds: Option<(usize, usize)>,
@@ -242,6 +243,24 @@ mod tests {
         }
     }
 
+    fn conway_code() -> BigInt {
+        let mut kode = BigInt::from(0);
+        for state in 0..512 {
+            let mut bit_count = 0usize;
+            let current_state = (state >> 4) % 2;
+            for bit_offset in [0, 1, 2, 3, 5, 6, 7, 8].iter() {
+                bit_count += (state >> bit_offset) & 1usize;
+            }
+            let result = BigInt::from(match bit_count {
+                2 => current_state,
+                3 => 1,
+                _ => 0,
+            });
+            kode = kode + (result << state);
+        }
+        kode
+    }
+
     #[test]
     fn test_conway_code() {
         let expected = "476348294852520375132009738840824718882889556\
@@ -256,7 +275,7 @@ mod tests {
     #[test]
     fn test_grid_from_string() {
 
-        let grid = grid_from_string(vec!["   ", "   "]);
+        let grid = Grid::from(vec!["   ", "   "]);
         let mut expected = CellSet::new();
         assert_eq!(grid, expected);
 
@@ -303,23 +322,7 @@ mod tests {
     }
 }
 
-pub fn conway_code() -> BigInt {
-    let mut kode = BigInt::from(0);
-    for state in 0..512 {
-        let mut bit_count = 0usize;
-        let current_state = (state >> 4) % 2;
-        for bit_offset in [0, 1, 2, 3, 5, 6, 7, 8].iter() {
-            bit_count += (state >> bit_offset) & 1usize;
-        }
-        let result = BigInt::from(match bit_count {
-            2 => current_state,
-            3 => 1,
-            _ => 0,
-        });
-        kode = kode + (result << state);
-    }
-    kode
-}
+
 
 
 fn get_state(world: &World, cell: &Cell) -> usize {
