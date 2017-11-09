@@ -14,6 +14,90 @@ use rustty::CellAccessor;
 type Cell = (usize, usize);
 type CellSet = HashSet<Cell>;
 
+struct Grid {
+    grid: CellSet,
+    bounds: Option<(usize, usize)>,
+}
+
+impl Grid {
+    fn new(b: Option<(usize, usize)>) -> Self {
+        match b {
+            None => Grid {
+                grid: CellSet::new(),
+                bounds: b,
+            },
+            _ => Grid {
+                grid: CellSet::with_capacity(b.unwrap().0 * b.unwrap().1),
+                bounds: b,
+            },
+        }
+
+    }
+    fn insert(&mut self, cell: Cell) {
+        if self.bounds != None {
+            if cell.0 <= self.bounds.unwrap().0 && cell.1 <= self.bounds.unwrap().1 {
+                self.grid.insert(cell);
+            }
+        } else {
+            self.grid.insert(cell);
+        }
+    }
+    fn contains(&self, cell: &Cell) -> bool {
+        self.grid.contains(cell)
+    }
+
+    fn x_bound(&self) -> usize {
+        self.bounds.unwrap().0
+    }
+
+    fn y_bound(&self) -> usize {
+        self.bounds.unwrap().1
+    }
+
+    pub fn gen(&mut self) {
+        if self.bounds == None {
+            return;
+        }
+        self.grid.clear();
+        for x in 0..self.bounds.unwrap().0 {
+            for y in 0..self.bounds.unwrap().1 {
+                if rand::thread_rng().gen_weighted_bool(10) {
+                    self.insert((x, y));
+                }
+            }
+        }
+    }
+}
+
+impl From<Vec<String>> for Grid {
+    fn from(s: Vec<String>) -> Self {
+        /// Returns a Grid interpreted from a string representation
+        ///
+        /// # Arguments
+        ///
+        /// * `s` - Representation of the grid. Each element of the vector
+        /// represents a row in the grid. Hash marks # indicate live cells.
+        /// For example vec!['#  ', '   ', ' # '] represents a grid with live
+        /// cells at (0, 0) and (2, 1).
+        ///
+        /// # Example
+        ///
+        /// ```
+        /// use hemoglobin::grid_from_string;
+        /// let grid = test_grid_from_string(vec!['#  ', '   ', ' # ']);
+        /// ```
+        let mut result = Grid::new(None);
+        for (y, row) in s.iter().enumerate() {
+            for (x, c) in row.chars().enumerate() {
+                if c == '#' {
+                    result.insert((x, y));
+                }
+            }
+        }
+        result
+    }
+}
+
 pub struct Rule {
     dec: BigInt,
     bin: BitVec,
@@ -42,43 +126,28 @@ impl From<String> for Rule {
 }
 
 pub struct World {
-    height: usize,
-    width: usize,
     rule: Rule,
-    pub grid: CellSet,
+    grid: Grid,
 }
 
 impl World {
     pub fn new(width: usize, height: usize, rule: Rule) -> World {
         World {
-            height: height,
-            width: width,
             rule: rule,
-            grid: HashSet::with_capacity(height * width),
-        }
-    }
-
-    pub fn gen(&mut self) {
-        self.grid.clear();
-        for x in 0..self.width {
-            for y in 0..self.height {
-                if rand::thread_rng().gen_weighted_bool(10) {
-                    self.grid.insert((x, y));
-                }
-            }
+            grid: Grid::new(Some((width, height))),
         }
     }
 
     fn decide_next_state(&self, cell: &Cell) -> bool {
-        let state = get_state(&self.grid, cell);
+        let state = get_state(&self, cell);
         return self.rule.bin[state];
     }
 
     pub fn step(&mut self) {
-        let mut new_state: CellSet = HashSet::with_capacity(self.width * self.height);
+        let mut new_state = Grid::new(self.grid.bounds);
 
-        for x in 0..self.width {
-            for y in 0..self.height {
+        for x in 0..self.grid.x_bound() {
+            for y in 0..self.grid.y_bound() {
                 let cell = (x, y);
                 if self.decide_next_state(&cell) {
                     new_state.insert(cell);
@@ -88,9 +157,13 @@ impl World {
         self.grid = new_state;
     }
 
+    pub fn gen(&mut self) {
+        self.grid.gen()
+    }
+
     pub fn render(&self, canvas: &mut Widget) {
-        for x in 0..self.width {
-            for y in 0..self.height {
+        for x in 0..self.grid.x_bound() {
+            for y in 0..self.grid.y_bound() {
                 let mut cell = canvas.get_mut(x, y).unwrap();
                 if self.grid.contains(&(x, y)) {
                     cell.set_ch('\u{2588}');
@@ -180,33 +253,6 @@ mod tests {
         assert_eq!(expected, conway_code());
     }
 
-    fn grid_from_string(s: Vec<&str>) -> CellSet {
-        /// Returns a CellSet interpreted from a string representation
-        ///
-        /// # Arguments
-        ///
-        /// * `s` - Representation of the grid. Each element of the vector
-        /// represents a row in the grid. Hash marks # indicate live cells.
-        /// For example vec!['#  ', '   ', ' # '] represents a grid with live
-        /// cells at (0, 0) and (2, 1).
-        ///
-        /// # Example
-        ///
-        /// ```
-        /// use hemoglobin::grid_from_string;
-        /// let grid = test_grid_from_string(vec!['#  ', '   ', ' # ']);
-        /// ```
-        let mut result = CellSet::new();
-        for (y, row) in s.iter().enumerate() {
-            for (x, c) in row.chars().enumerate() {
-                if c == '#' {
-                    result.insert((x, y));
-                }
-            }
-        }
-        result
-    }
-
     #[test]
     fn test_grid_from_string() {
 
@@ -276,7 +322,7 @@ pub fn conway_code() -> BigInt {
 }
 
 
-fn get_state(grid: &CellSet, cell: &Cell) -> usize {
+fn get_state(world: &World, cell: &Cell) -> usize {
     let (x, y) = (cell.0, cell.1);
     let mut val = 0;
     // We now build up an integer representation of the state centered at cell.
@@ -300,7 +346,7 @@ fn get_state(grid: &CellSet, cell: &Cell) -> usize {
                 Some(xx) => {
                     match (y + dy).checked_sub(1) {
                         None => false,
-                        Some(yy) => grid.contains(&(xx, yy)),
+                        Some(yy) => world.grid.contains(&(xx, yy)),
                     }
                 }
             }

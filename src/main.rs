@@ -10,7 +10,7 @@ use rustty::ui::{Widget, Alignable, HorizontalAlign, VerticalAlign};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let rule_arg = &args[1];  // 0th arg is program name
+    let rule_arg = &args[1]; // 0th arg is program name
     let rule = hemoglobin::Rule::from(rule_arg.to_owned());
 
     //Create terminal and canvas
