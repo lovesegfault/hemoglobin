@@ -8,3 +8,21 @@ bit-vec = "0.4.4"
 num = "0.1.40"
 rand = "0.3.17"
 rustty = "0.1.12"
+
+[profile.dev]
+opt-level = 1
+debug = true
+rpath = true
+lto = false
+debug-assertions = true
+codegen-units = 4
+panic = 'unwind'
+
+[profile.release]
+opt-level = 3
+debug = false
+rpath = false
+lto = true
+debug-assertions = false
+codegen-units = 4
+panic = 'unwind'
