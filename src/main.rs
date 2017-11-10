@@ -29,7 +29,7 @@ fn main() {
         if auto {
             delay = 0;
         } else {
-            delay = 10;
+            delay = 20;
         }
         while let Some(Event::Key(c)) =
             term.get_event(Some(Duration::from_millis(delay)).unwrap())
