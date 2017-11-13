@@ -5,8 +5,8 @@ extern crate rustty;
 use std::time::Duration;
 use std::env;
 
-use rustty::{Terminal, Event, HasSize};
-use rustty::ui::{Widget, Alignable, HorizontalAlign, VerticalAlign};
+use rustty::{Event, HasSize, Terminal};
+use rustty::ui::{Alignable, HorizontalAlign, VerticalAlign, Widget};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -31,9 +31,8 @@ fn main() {
         } else {
             delay = 20;
         }
-        while let Some(Event::Key(c)) =
-            term.get_event(Some(Duration::from_millis(delay)).unwrap())
-                .unwrap()
+        while let Some(Event::Key(c)) = term.get_event(Some(Duration::from_millis(delay)).unwrap())
+            .unwrap()
         {
             match c {
                 'q' => break 'rendering,

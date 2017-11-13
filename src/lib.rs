@@ -96,12 +96,12 @@ impl<'a> From<Vec<&'a str>> for Grid {
     /// ```
     fn from(s: Vec<&str>) -> Self {
         let mut result = Grid::new(None);
-        for (y, row) in s.iter().enumerate(){
-                      for (x, c) in row.chars().enumerate() {
+        for (y, row) in s.iter().enumerate() {
+            for (x, c) in row.chars().enumerate() {
                 if c == '#' {
                     result.insert(&(x, y));
                 }
-            }  
+            }
         }
         result
     }
