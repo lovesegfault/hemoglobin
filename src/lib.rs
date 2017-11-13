@@ -6,16 +6,10 @@ extern crate rustty;
 use std::collections::HashSet;
 
 use bit_vec::BitVec;
-use num::bigint::BigInt;
+use num::bigint::BigUint;
 use rand::Rng;
 use rustty::ui::Widget;
 use rustty::CellAccessor;
-
-#[macro_use]
-pub mod macros {
-    #[macro_export]
-    macro_rules! ovec { ($($elem:expr),* $(,)*) => { vec![$($elem.to_owned()),*] } }
-}
 
 type Cell = (usize, usize);
 type CellSet = HashSet<Cell>;
@@ -34,50 +28,58 @@ impl Grid {
                 grid: CellSet::new(),
                 bounds: b,
             },
-            _ => Grid {
-                grid: CellSet::with_capacity(b.unwrap().0 * b.unwrap().1),
+            Some((w, h)) => Grid {
+                grid: CellSet::with_capacity(w * h),
                 bounds: b,
             },
         }
-
     }
-    fn insert(&mut self, cell: Cell) {
-        if self.bounds != None {
-            if cell.0 <= self.bounds.unwrap().0 && cell.1 <= self.bounds.unwrap().1 {
-                self.grid.insert(cell);
+    fn insert(&mut self, cell: &Cell) {
+        match self.bounds {
+            None => {
+                self.grid.insert(*cell);
             }
-        } else {
-            self.grid.insert(cell);
+            Some((w, h)) => if cell.0 <= w && cell.1 <= h {
+                self.grid.insert(*cell);
+            },
         }
     }
     fn contains(&self, cell: &Cell) -> bool {
         self.grid.contains(cell)
     }
 
-    fn x_bound(&self) -> usize {
-        self.bounds.unwrap().0
+    fn x_bound(&self) -> Option<usize> {
+        match self.bounds {
+            None => None,
+            Some((w, _)) => Some(w),
+        }
     }
 
-    fn y_bound(&self) -> usize {
-        self.bounds.unwrap().1
+    fn y_bound(&self) -> Option<usize> {
+        match self.bounds {
+            None => None,
+            Some((_, h)) => Some(h),
+        }
     }
 
     pub fn gen(&mut self) {
-        if self.bounds == None {
-            return;
-        }
-        self.grid.clear();
-        for x in 0..self.bounds.unwrap().0 {
-            for y in 0..self.bounds.unwrap().1 {
-                if rand::thread_rng().gen_weighted_bool(10) {
-                    self.insert((x, y));
+        match self.bounds {
+            None => {}
+            Some(_) => {
+                self.grid.clear();
+                for x in 0..self.x_bound().unwrap() {
+                    for y in 0..self.y_bound().unwrap() {
+                        if rand::thread_rng().gen_weighted_bool(10) {
+                            self.insert(&(x, y));
+                        }
+                    }
                 }
             }
         }
     }
 }
 
-impl From<Vec<String>> for Grid {
+impl<'a> From<Vec<&'a str>> for Grid {
     /// Returns a Grid interpreted from a string representation
     ///
     /// # Arguments
@@ -90,35 +92,32 @@ impl From<Vec<String>> for Grid {
     /// # Example
     ///
     /// ```
-    /// # #[macro_use] extern crate hemoglobin; fn main(){
-    ///
-    /// let grid = hemoglobin::Grid::from(ovec!["#  ", "   ", " # "]);
-    /// # }
+    /// let grid = hemoglobin::Grid::from(vec!["#  ", "   ", " # "]);
     /// ```
-    fn from(s: Vec<String>) -> Self {
+    fn from(s: Vec<&str>) -> Self {
         let mut result = Grid::new(None);
-        for (y, row) in s.iter().enumerate() {
-            for (x, c) in row.chars().enumerate() {
+        for (y, row) in s.iter().enumerate(){
+                      for (x, c) in row.chars().enumerate() {
                 if c == '#' {
-                    result.insert((x, y));
+                    result.insert(&(x, y));
                 }
-            }
+            }  
         }
         result
     }
 }
 
 pub struct Rule {
-    dec: BigInt,
+    dec: BigUint,
     bin: BitVec,
 }
 
-impl From<BigInt> for Rule {
-    fn from(x: BigInt) -> Self {
+impl From<BigUint> for Rule {
+    fn from(x: BigUint) -> Self {
         Rule {
             dec: x.clone(),
             bin: {
-                let result_reversed = BitVec::from_bytes(&x.to_bytes_be().1);
+                let result_reversed = BitVec::from_bytes(&x.to_bytes_be());
                 let mut result = BitVec::from_elem(512, false);
                 for i in 0..result_reversed.len() {
                     result.set(i, result_reversed[result_reversed.len() - i - 1]);
@@ -131,13 +130,14 @@ impl From<BigInt> for Rule {
 
 impl From<String> for Rule {
     fn from(s: String) -> Self {
-        Rule::from(s.parse::<BigInt>().unwrap())
+        Rule::from(s.parse::<BigUint>().unwrap())
     }
 }
 
 pub struct World {
     rule: Rule,
     grid: Grid,
+    swap_grid: Grid,
 }
 
 impl World {
@@ -145,6 +145,7 @@ impl World {
         World {
             rule: rule,
             grid: Grid::new(Some((width, height))),
+            swap_grid: Grid::new(Some((width, height))),
         }
     }
 
@@ -154,17 +155,17 @@ impl World {
     }
 
     pub fn step(&mut self) {
-        let mut new_state = Grid::new(self.grid.bounds);
+        self.swap_grid.grid.clear();
 
-        for x in 0..self.grid.x_bound() {
-            for y in 0..self.grid.y_bound() {
+        for x in 0..self.grid.x_bound().unwrap() {
+            for y in 0..self.grid.y_bound().unwrap() {
                 let cell = (x, y);
                 if self.decide_next_state(&cell) {
-                    new_state.insert(cell);
+                    self.swap_grid.insert(&cell);
                 }
             }
         }
-        self.grid = new_state;
+        std::mem::swap(&mut self.grid, &mut self.swap_grid);
     }
 
     pub fn gen(&mut self) {
@@ -172,8 +173,8 @@ impl World {
     }
 
     pub fn render(&self, canvas: &mut Widget) {
-        for x in 0..self.grid.x_bound() {
-            for y in 0..self.grid.y_bound() {
+        for x in 0..self.grid.x_bound().unwrap() {
+            for y in 0..self.grid.y_bound().unwrap() {
                 let mut cell = canvas.get_mut(x, y).unwrap();
                 if self.grid.contains(&(x, y)) {
                     cell.set_ch('\u{2588}');
@@ -218,8 +219,8 @@ mod tests {
         // Consider a two-byte number where the firt byte's value is 10 and
         // the second byte's value is 7. Converting to a little endian byte
         // array should make the 0th byte 10 and the 1th byte 7.
-        let ten_seven = BigInt::from(10 + 7 * (2.pow(8)));
-        let bytes = ten_seven.to_bytes_le().1;
+        let ten_seven = BigUint::from(10 + 7 * (2.pow(8)) as u32);
+        let bytes = ten_seven.to_bytes_le();
         assert_eq!(bytes[0], 10);
         assert_eq!(bytes[1], 7);
         // Now check what happens when we convert this to a BitVec. The bytes
@@ -252,15 +253,15 @@ mod tests {
         }
     }
 
-    fn gen_conway_dec() -> BigInt {
-        let mut kode = BigInt::from(0);
+    fn gen_conway_dec() -> BigUint {
+        let mut kode = BigUint::from(0u32);
         for state in 0..512 {
             let mut bit_count = 0usize;
             let current_state = (state >> 4) % 2;
             for bit_offset in [0, 1, 2, 3, 5, 6, 7, 8].iter() {
                 bit_count += (state >> bit_offset) & 1usize;
             }
-            let result = BigInt::from(match bit_count {
+            let result = BigUint::from(match bit_count {
                 2 => current_state,
                 3 => 1,
                 _ => 0,
@@ -276,24 +277,23 @@ mod tests {
                         423255282629108876378472743729817205343700177\
                         683429960362194923168607044012736510546282236\
                         08960"
-            .parse::<BigInt>()
+            .parse::<BigUint>()
             .unwrap();
         assert_eq!(expected, gen_conway_dec());
     }
 
     #[test]
     fn test_grid_from_string() {
-
-        let grid = Grid::from(ovec!["   ", "   "]);
+        let grid = Grid::from(vec!["   ", "   "]);
         let mut expected = Grid::new(None);
         assert_eq!(grid, expected);
 
-        let grid = Grid::from(ovec!["#  ", "   "]);
-        expected.insert((0, 0));
+        let grid = Grid::from(vec!["#  ", "   "]);
+        expected.insert(&(0, 0));
         assert_eq!(grid, expected);
 
-        let grid = Grid::from(ovec!["#  ", " # "]);
-        expected.insert((1, 1));
+        let grid = Grid::from(vec!["#  ", " # "]);
+        expected.insert(&(1, 1));
         assert_eq!(grid, expected);
     }
 
@@ -307,7 +307,7 @@ mod tests {
 
     #[test]
     fn test_rule_from_bigint() {
-        let rule = Rule::from(BigInt::from(1802));
+        let rule = Rule::from(BigUint::from(1802u32));
         for i in 0..16 {
             assert_eq!(rule.bin[i], EXPECTED_1082_BITS[i]);
         }
@@ -319,13 +319,13 @@ mod tests {
         //  0
         // 0#< look here
         //  ^
-        grid.insert((0, 0));
+        grid.insert(&(0, 0));
         assert_eq!(get_state(&grid, &(0, 0)), 16); // 2^4
-        //  01
-        // 0#-< look here
-        // 1-#
-        //  ^
-        grid.insert((1, 1));
+                                                   //  01
+                                                   // 0#-< look here
+                                                   // 1-#
+                                                   //  ^
+        grid.insert(&(1, 1));
         assert_eq!(get_state(&grid, &(0, 0)), 272); // 2^4 + 2^8
     }
 }
@@ -354,14 +354,11 @@ fn get_state(grid: &Grid, cell: &Cell) -> usize {
         for dy in 0..3 {
             if match (x + dx).checked_sub(1) {
                 None => false,
-                Some(xx) => {
-                    match (y + dy).checked_sub(1) {
-                        None => false,
-                        Some(yy) => grid.contains(&(xx, yy)),
-                    }
-                }
-            }
-            {
+                Some(xx) => match (y + dy).checked_sub(1) {
+                    None => false,
+                    Some(yy) => grid.contains(&(xx, yy)),
+                },
+            } {
                 val += 1 << (dx + (3 * dy));
             }
         }
