@@ -10,8 +10,8 @@ use rustty::ui::{Widget, Alignable, HorizontalAlign, VerticalAlign};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let rule_arg = &args[1];  // 0th arg is program name
-    let rule = hemoglobin::decimal_encoded_string_to_bitvec(rule_arg);
+    let rule_arg = &args[1]; // 0th arg is program name
+    let rule = hemoglobin::Rule::from(rule_arg.to_owned());
 
     //Create terminal and canvas
     let mut term = Terminal::new().unwrap();
@@ -19,7 +19,7 @@ fn main() {
     canvas.align(&term, HorizontalAlign::Left, VerticalAlign::Top, 0);
 
     let (width, height) = canvas.size();
-    let mut w = hemoglobin::World::new((width, height), rule);
+    let mut w = hemoglobin::World::new(width, height, rule);
     w.gen();
 
     let mut auto = false;
