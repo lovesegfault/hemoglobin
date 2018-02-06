@@ -14,7 +14,6 @@ use rustty::CellAccessor;
 type Cell = (usize, usize);
 type CellSet = HashSet<Cell>;
 
-
 #[derive(PartialEq, Eq, Debug)]
 pub struct Grid {
     grid: CellSet,
@@ -39,9 +38,11 @@ impl Grid {
             None => {
                 self.grid.insert(*cell);
             }
-            Some((w, h)) => if cell.0 <= w && cell.1 <= h {
-                self.grid.insert(*cell);
-            },
+            Some((w, h)) => {
+                if cell.0 <= w && cell.1 <= h {
+                    self.grid.insert(*cell);
+                }
+            }
         }
     }
     fn contains(&self, cell: &Cell) -> bool {
@@ -321,17 +322,14 @@ mod tests {
         //  ^
         grid.insert(&(0, 0));
         assert_eq!(get_state(&grid, &(0, 0)), 16); // 2^4
-                                                   //  01
-                                                   // 0#-< look here
-                                                   // 1-#
-                                                   //  ^
+        //  01
+        // 0#-< look here
+        // 1-#
+        //  ^
         grid.insert(&(1, 1));
         assert_eq!(get_state(&grid, &(0, 0)), 272); // 2^4 + 2^8
     }
 }
-
-
-
 
 fn get_state(grid: &Grid, cell: &Cell) -> usize {
     let (x, y) = (cell.0, cell.1);
@@ -354,11 +352,14 @@ fn get_state(grid: &Grid, cell: &Cell) -> usize {
         for dy in 0..3 {
             if match (x + dx).checked_sub(1) {
                 None => false,
-                Some(xx) => match (y + dy).checked_sub(1) {
-                    None => false,
-                    Some(yy) => grid.contains(&(xx, yy)),
-                },
-            } {
+                Some(xx) => {
+                    match (y + dy).checked_sub(1) {
+                        None => false,
+                        Some(yy) => grid.contains(&(xx, yy)),
+                    }
+                }
+            }
+            {
                 val += 1 << (dx + (3 * dy));
             }
         }
