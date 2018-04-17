@@ -1,8 +1,10 @@
+extern crate base64;
 extern crate bit_vec;
 extern crate num;
 extern crate rand;
 extern crate rustty;
 
+use std::fmt;
 use std::collections::HashSet;
 
 use bit_vec::BitVec;
@@ -105,6 +107,31 @@ impl<'a> From<Vec<&'a str>> for Grid {
             }
         }
         result
+    }
+}
+struct B64 {
+    data: Vec<u8>,
+    conf: base64::Config,
+}
+
+impl From<String> for B64 {
+    fn from(s: String) -> Self {
+        let conf = base64::Config::new(
+            base64::CharacterSet::Standard,
+            true,
+            true,
+            base64::LineWrap::NoWrap,
+        );
+        B64 {
+            data: base64::decode_config(&s, conf).unwrap(),
+            conf: conf,
+        }
+    }
+}
+
+impl fmt::Display for B64 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", base64::encode_config(&self.data, self.conf))
     }
 }
 
