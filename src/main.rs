@@ -1,5 +1,4 @@
 extern crate hemoglobin;
-extern crate num;
 extern crate rustty;
 
 use std::time::Duration;
@@ -31,9 +30,8 @@ fn main() {
         } else {
             delay = 20;
         }
-        while let Some(Event::Key(c)) =
-            term.get_event(Some(Duration::from_millis(delay)).unwrap())
-                .unwrap()
+        while let Some(Event::Key(c)) = term.get_event(Some(Duration::from_millis(delay)).unwrap())
+            .unwrap()
         {
             match c {
                 'q' => break 'rendering,

@@ -8,7 +8,6 @@ use std::fmt;
 use std::collections::HashSet;
 
 use bit_vec::BitVec;
-use num::bigint::BigUint;
 use rand::Rng;
 use rustty::ui::Widget;
 use rustty::CellAccessor;
@@ -109,6 +108,8 @@ impl<'a> From<Vec<&'a str>> for Grid {
         result
     }
 }
+
+#[derive(Clone)]
 struct B64 {
     data: Vec<u8>,
     conf: base64::Config,
@@ -136,19 +137,19 @@ impl fmt::Display for B64 {
 }
 
 pub struct Rule {
-    dec: BigUint,
+    b64: B64,
     bin: BitVec,
 }
 
-impl From<BigUint> for Rule {
-    fn from(x: BigUint) -> Self {
+impl From<B64> for Rule {
+    fn from(x: B64) -> Self {
         Rule {
-            dec: x.clone(),
+            b64: x.clone(),
             bin: {
-                let result_reversed = BitVec::from_bytes(&x.to_bytes_be());
+                let reversed = BitVec::from_bytes(&x.data);
                 let mut result = BitVec::from_elem(512, false);
-                for i in 0..result_reversed.len() {
-                    result.set(i, result_reversed[result_reversed.len() - i - 1]);
+                for i in 0..reversed.len() {
+                    result.set(i, reversed[reversed.len() - i - 1]);
                 }
                 result
             },
@@ -158,7 +159,7 @@ impl From<BigUint> for Rule {
 
 impl From<String> for Rule {
     fn from(s: String) -> Self {
-        Rule::from(s.parse::<BigUint>().unwrap())
+        Rule::from(B64::from(s))
     }
 }
 
