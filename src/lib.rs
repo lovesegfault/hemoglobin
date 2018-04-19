@@ -111,22 +111,29 @@ impl<'a> From<Vec<&'a str>> for Grid {
 
 #[derive(Clone)]
 struct B64 {
-    data: Vec<u8>,
+    data: [u8; 8],
     conf: base64::Config,
 }
 
-impl From<String> for B64 {
-    fn from(s: String) -> Self {
-        let conf = base64::Config::new(
+impl Default for B64 {
+    fn default() -> Self {
+        B64 {
+            data: [0u8;8],
+            conf: base64::Config::new(
             base64::CharacterSet::Standard,
             true,
             true,
             base64::LineWrap::NoWrap,
-        );
-        B64 {
-            data: base64::decode_config(&s, conf).unwrap(),
-            conf: conf,
+        )
         }
+    }
+}
+
+impl From<String> for B64 {
+    fn from(s: String) -> Self {
+        let mut enc = B64::default();
+        base64::decode_config_slice(&s, enc.conf, &mut enc.data).unwrap();
+        enc
     }
 }
 
@@ -136,6 +143,7 @@ impl fmt::Display for B64 {
     }
 }
 
+#[allow(dead_code)]
 pub struct Rule {
     b64: B64,
     bin: BitVec,
@@ -217,27 +225,15 @@ impl World {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use num::PrimInt;
+    extern crate byteorder;
 
-    const EXPECTED_1082_BITS: [bool; 16] = [
-        false,
-        true,
-        false,
-        true,
-        false,
-        false,
-        false,
-        false,
-        true,
-        true,
-        true,
-        false,
-        false,
-        false,
-        false,
-        false,
-    ];
+    use super::*;
+    use self::byteorder::{ByteOrder, LittleEndian};
+
+    /*const EXPECTED_1082_BITS: [bool; 16] = [
+        false, true, false, true, false, false, false, false, true, true, true, false, false,
+        false, false, false,
+    ];*/
     // 1802 = 10 + 7*(2^8), so writing in little endian byte order but writing
     // the bits within each byte with MSB on the left, we have
     // [00001010][00000111].
@@ -245,13 +241,15 @@ mod tests {
 
     #[test]
     fn test_bitvec_order() {
-        // Consider a two-byte number where the firt byte's value is 10 and
+        // Consider a two-byte number where the first byte's value is 10 and
         // the second byte's value is 7. Converting to a little endian byte
         // array should make the 0th byte 10 and the 1th byte 7.
-        let ten_seven = BigUint::from(10 + 7 * (2.pow(8)) as u32);
-        let bytes = ten_seven.to_bytes_le();
+        let num = 10 + 7 * (2_usize.pow(8)) as u64;
+        let mut bytes = [0u8; 2];
+        LittleEndian::write_uint(&mut bytes, num, 2);
         assert_eq!(bytes[0], 10);
         assert_eq!(bytes[1], 7);
+
         // Now check what happens when we convert this to a BitVec. The bytes
         // are in little endian order, but the bits within each byte are big
         // endian:
@@ -281,6 +279,22 @@ mod tests {
             assert_eq!(bits[i], expected[i]);
         }
     }
+
+    #[test]
+    fn test_gen_conway() {
+        fn gen_conway() -> B64 {
+            let mut conway = B64::default();
+            for state in 0..512 {
+                let mut bit_count = 0_usize;
+                let current_state = (state >> 4) % 2;
+                for bit_offset in [0, 1, 2, 3, 5, 6, 7, 8].iter() {
+                    bit_count
+                }
+            }
+        }
+    }
+
+    /*
 
     fn gen_conway_dec() -> BigUint {
         let mut kode = BigUint::from(0u32);
@@ -357,6 +371,7 @@ mod tests {
         grid.insert(&(1, 1));
         assert_eq!(get_state(&grid, &(0, 0)), 272); // 2^4 + 2^8
     }
+ */
 }
 
 fn get_state(grid: &Grid, cell: &Cell) -> usize {
