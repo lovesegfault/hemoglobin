@@ -4,10 +4,10 @@ version = "0.1.0"
 authors = ["Bernardo Meurer <meurerbernardo@gmail.com>"]
 
 [dependencies]
-bit-vec = "0.4"
-num = "0.1"
-rand = "0.4"
-rustty = "0.1"
+bit-vec = "0.5.0"
+num = "0.2.0"
+rand = "0.5.5"
+rustty = "0.1.12"
 
 [profile.dev]
 opt-level = 1
