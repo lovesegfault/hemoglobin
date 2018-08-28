@@ -70,7 +70,7 @@ impl Grid {
                 self.grid.clear();
                 for x in 0..self.x_bound().unwrap() {
                     for y in 0..self.y_bound().unwrap() {
-                        if rand::thread_rng().gen_weighted_bool(10) {
+                        if rand::thread_rng().gen_bool(1.0/10.0) {
                             self.insert(&(x, y));
                         }
                     }
