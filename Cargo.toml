@@ -7,7 +7,7 @@ authors = ["Bernardo Meurer <meurerbernardo@gmail.com>"]
 bit-vec = "0.5.0"
 num = "0.2.0"
 rand = "0.5.5"
-rustty = "0.1.12"
+termion = "1.5.1"
 
 [profile.dev]
 opt-level = 1
