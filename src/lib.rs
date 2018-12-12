@@ -1,8 +1,3 @@
-extern crate bit_vec;
-extern crate num;
-extern crate rand;
-extern crate rustty;
-
 use std::collections::HashSet;
 
 use bit_vec::BitVec;

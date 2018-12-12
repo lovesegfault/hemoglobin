@@ -1,7 +1,3 @@
-extern crate hemoglobin;
-extern crate num;
-extern crate rustty;
-
 use std::time::Duration;
 use std::env;
 
