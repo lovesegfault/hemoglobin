@@ -176,7 +176,7 @@ impl World {
     pub fn render(&self, canvas: &mut Widget) {
         for x in 0..self.grid.x_bound().unwrap() {
             for y in 0..self.grid.y_bound().unwrap() {
-                let mut cell = canvas.get_mut(x, y).unwrap();
+                let cell = canvas.get_mut(x, y).unwrap();
                 if self.grid.contains(&(x, y)) {
                     cell.set_ch('\u{2588}');
                 } else {
